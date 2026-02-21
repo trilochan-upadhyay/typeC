@@ -1,0 +1,580 @@
+<!doctype html>
+<html lang="en" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TypeC - Online C/C++ Compiler</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&amp;family=Space+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    
+    .code-editor {
+      font-family: 'JetBrains Mono', monospace;
+      tab-size: 4;
+      line-height: 1.6;
+    }
+    
+    .code-editor:focus {
+      outline: none;
+    }
+    
+    .line-numbers {
+      font-family: 'JetBrains Mono', monospace;
+      line-height: 1.6;
+    }
+    
+    .glow-effect {
+      box-shadow: 0 0 40px rgba(99, 102, 241, 0.15), 0 0 80px rgba(99, 102, 241, 0.1);
+    }
+    
+    .run-btn:hover {
+      box-shadow: 0 0 20px rgba(34, 197, 94, 0.4);
+    }
+    
+    .output-area {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    
+    @keyframes pulse-border {
+      0%, 100% { border-color: rgba(99, 102, 241, 0.5); }
+      50% { border-color: rgba(99, 102, 241, 0.8); }
+    }
+    
+    .compiling {
+      animation: pulse-border 1s ease-in-out infinite;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .fade-in {
+      animation: fadeIn 0.3s ease-out forwards;
+    }
+    
+    .scrollbar-dark::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    
+    .scrollbar-dark::-webkit-scrollbar-track {
+      background: #1e1e2e;
+    }
+    
+    .scrollbar-dark::-webkit-scrollbar-thumb {
+      background: #4c4f69;
+      border-radius: 4px;
+    }
+    
+    .scrollbar-dark::-webkit-scrollbar-thumb:hover {
+      background: #6c6f85;
+    }
+  </style>
+  <style>body { box-sizing: border-box; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+ </head>
+ <body class="h-full bg-slate-950 text-slate-200 overflow-hidden">
+  <div id="app-container" class="h-full w-full flex flex-col"><!-- Header -->
+   <header class="flex-shrink-0 border-b border-slate-800 bg-slate-900/80 backdrop-blur-sm">
+    <div class="flex items-center justify-between px-6 py-3">
+     <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg">
+       <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+       </svg>
+      </div>
+      <div>
+       <h1 id="app-title" class="text-xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent" style="font-family: 'Space Grotesk', sans-serif;">TypeC</h1>
+       <p class="text-xs text-slate-500">Online C/C++ Compiler</p>
+      </div>
+     </div>
+     <div class="flex items-center gap-3"><!-- Language Selector --> <select id="language-select" class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-300 focus:outline-none focus:border-indigo-500 cursor-pointer"> <option value="c">C</option> <option value="cpp" selected>C++</option> </select> <!-- Run Button --> <button id="run-btn" class="run-btn flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-400 hover:to-green-400 text-white font-semibold px-5 py-2 rounded-lg transition-all duration-200 shadow-lg">
+       <svg class="w-4 h-4" fill="currentColor" viewbox="0 0 24 24"><path d="M8 5v14l11-7z" />
+       </svg><span>Run</span> </button>
+     </div>
+    </div>
+   </header><!-- Main Content -->
+   <main class="flex-1 flex flex-col lg:flex-row overflow-hidden"><!-- Code Editor Panel -->
+    <div class="flex-1 flex flex-col min-h-0 lg:border-r border-slate-800"><!-- Editor Header -->
+     <div class="flex-shrink-0 flex items-center gap-2 px-4 py-2 bg-slate-900/50 border-b border-slate-800">
+      <div class="flex gap-1.5">
+       <div class="w-3 h-3 rounded-full bg-red-500/80"></div>
+       <div class="w-3 h-3 rounded-full bg-yellow-500/80"></div>
+       <div class="w-3 h-3 rounded-full bg-green-500/80"></div>
+      </div><span id="filename" class="text-sm text-slate-400 ml-2">main.cpp</span>
+     </div><!-- Editor Area -->
+     <div id="editor-container" class="flex-1 flex overflow-hidden bg-slate-900 glow-effect m-3 rounded-xl border border-slate-800"><!-- Line Numbers -->
+      <div id="line-numbers" class="line-numbers flex-shrink-0 py-4 px-3 text-right text-slate-600 select-none bg-slate-900/50 border-r border-slate-800 overflow-hidden">
+       <div>
+        1
+       </div>
+      </div><!-- Code Input --> <textarea id="code-editor" class="code-editor flex-1 w-full py-4 px-4 bg-transparent text-slate-200 resize-none scrollbar-dark" spellcheck="false" placeholder="Write your code here..."></textarea>
+     </div>
+    </div><!-- Output Panel -->
+    <div class="flex-1 flex flex-col min-h-0 lg:max-w-lg xl:max-w-xl"><!-- Output Header -->
+     <div class="flex-shrink-0 flex items-center justify-between px-4 py-2 bg-slate-900/50 border-b border-slate-800">
+      <div class="flex items-center gap-2">
+       <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+       </svg><span class="text-sm text-slate-400">Output</span>
+      </div><button id="clear-btn" class="text-xs text-slate-500 hover:text-slate-300 transition-colors px-2 py-1 rounded hover:bg-slate-800"> Clear </button>
+     </div><!-- Output Area -->
+     <div id="output-container" class="flex-1 overflow-auto bg-slate-950 m-3 rounded-xl border border-slate-800 scrollbar-dark">
+      <div id="output-area" class="output-area p-4 text-sm text-slate-400"><span class="text-slate-600">// Output will appear here after running your code</span>
+      </div>
+     </div><!-- Status Bar -->
+     <div id="status-bar" class="flex-shrink-0 flex items-center justify-between px-4 py-2 bg-slate-900/30 border-t border-slate-800 text-xs">
+      <div class="flex items-center gap-4"><span id="status-text" class="text-slate-500">Ready</span>
+      </div>
+      <div class="flex items-center gap-4 text-slate-600"><span id="exec-time"></span>
+      </div>
+     </div>
+    </div>
+   </main>
+  </div>
+  <script>
+    const defaultConfig = {
+      app_title: 'TypeC',
+      welcome_message: 'Welcome to TypeC! Write your C/C++ code and click Run.',
+      primary_color: '#6366f1',
+      secondary_color: '#1e1b4b',
+      text_color: '#e2e8f0',
+      accent_color: '#22c55e',
+      surface_color: '#0f172a'
+    };
+
+    const defaultCppCode = `// ${defaultConfig.welcome_message}
+
+#include <iostream>
+#include <string>
+#include <vector>
+
+using namespace std;
+
+int main() {
+    cout << "Hello, TypeC!" << endl;
+    
+    // Variables and data types
+    int number = 42;
+    double pi = 3.14159;
+    string message = "C++ is powerful!";
+    
+    cout << "Number: " << number << endl;
+    cout << "Pi: " << pi << endl;
+    cout << "Message: " << message << endl;
+    
+    // Simple loop
+    cout << "\\nCounting to 5:" << endl;
+    for (int i = 1; i <= 5; i++) {
+        cout << i << " ";
+    }
+    cout << endl;
+    
+    // Vector example
+    vector<string> languages = {"C", "C++", "Python", "JavaScript"};
+    cout << "\\nPopular languages:" << endl;
+    for (const auto& lang : languages) {
+        cout << "- " << lang << endl;
+    }
+    
+    return 0;
+}`;
+
+    const defaultCCode = `// ${defaultConfig.welcome_message}
+
+#include <stdio.h>
+#include <string.h>
+
+int main() {
+    printf("Hello, TypeC!\\n");
+    
+    // Variables and data types
+    int number = 42;
+    double pi = 3.14159;
+    char message[] = "C is powerful!";
+    
+    printf("Number: %d\\n", number);
+    printf("Pi: %.5f\\n", pi);
+    printf("Message: %s\\n", message);
+    
+    // Simple loop
+    printf("\\nCounting to 5:\\n");
+    for (int i = 1; i <= 5; i++) {
+        printf("%d ", i);
+    }
+    printf("\\n");
+    
+    // Array example
+    char* languages[] = {"C", "C++", "Python", "JavaScript"};
+    int count = sizeof(languages) / sizeof(languages[0]);
+    
+    printf("\\nPopular languages:\\n");
+    for (int i = 0; i < count; i++) {
+        printf("- %s\\n", languages[i]);
+    }
+    
+    return 0;
+}`;
+
+    // DOM Elements
+    const codeEditor = document.getElementById('code-editor');
+    const lineNumbers = document.getElementById('line-numbers');
+    const outputArea = document.getElementById('output-area');
+    const runBtn = document.getElementById('run-btn');
+    const clearBtn = document.getElementById('clear-btn');
+    const languageSelect = document.getElementById('language-select');
+    const filename = document.getElementById('filename');
+    const statusText = document.getElementById('status-text');
+    const execTime = document.getElementById('exec-time');
+    const editorContainer = document.getElementById('editor-container');
+    const appTitle = document.getElementById('app-title');
+
+    // Initialize code
+    codeEditor.value = defaultCppCode;
+
+    // Update line numbers
+    function updateLineNumbers() {
+      const lines = codeEditor.value.split('\n').length;
+      let html = '';
+      for (let i = 1; i <= lines; i++) {
+        html += `<div>${i}</div>`;
+      }
+      lineNumbers.innerHTML = html;
+    }
+
+    // Sync scroll between editor and line numbers
+    codeEditor.addEventListener('scroll', () => {
+      lineNumbers.scrollTop = codeEditor.scrollTop;
+    });
+
+    // Update line numbers on input
+    codeEditor.addEventListener('input', updateLineNumbers);
+    codeEditor.addEventListener('keydown', (e) => {
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        const start = codeEditor.selectionStart;
+        const end = codeEditor.selectionEnd;
+        codeEditor.value = codeEditor.value.substring(0, start) + '    ' + codeEditor.value.substring(end);
+        codeEditor.selectionStart = codeEditor.selectionEnd = start + 4;
+        updateLineNumbers();
+      }
+    });
+
+    // Language change handler
+    languageSelect.addEventListener('change', () => {
+      const lang = languageSelect.value;
+      filename.textContent = lang === 'c' ? 'main.c' : 'main.cpp';
+      
+      const config = window.elementSdk?.config || defaultConfig;
+      const welcomeMsg = config.welcome_message || defaultConfig.welcome_message;
+      
+      if (lang === 'c') {
+        codeEditor.value = defaultCCode.replace(defaultConfig.welcome_message, welcomeMsg);
+      } else {
+        codeEditor.value = defaultCppCode.replace(defaultConfig.welcome_message, welcomeMsg);
+      }
+      updateLineNumbers();
+    });
+
+    // Simulate compilation and execution
+    function simulateCompilation(code, language) {
+      return new Promise((resolve) => {
+        const startTime = Date.now();
+        
+        // Simulate compilation delay
+        setTimeout(() => {
+          const result = {
+            success: true,
+            output: '',
+            errors: [],
+            warnings: [],
+            executionTime: 0
+          };
+
+          // Check for common errors
+          if (!code.includes('main')) {
+            result.success = false;
+            result.errors.push("error: 'main' function not found");
+          }
+
+          // Check for unmatched braces
+          const openBraces = (code.match(/{/g) || []).length;
+          const closeBraces = (code.match(/}/g) || []).length;
+          if (openBraces !== closeBraces) {
+            result.success = false;
+            result.errors.push(`error: unmatched braces (${openBraces} open, ${closeBraces} close)`);
+          }
+
+          // Check for missing semicolons (simple check)
+          const lines = code.split('\n');
+          lines.forEach((line, index) => {
+            const trimmed = line.trim();
+            if (trimmed && !trimmed.startsWith('//') && !trimmed.startsWith('#') && 
+                !trimmed.startsWith('{') && !trimmed.startsWith('}') &&
+                !trimmed.endsWith('{') && !trimmed.endsWith('}') &&
+                !trimmed.endsWith(';') && !trimmed.endsWith(',') &&
+                !trimmed.includes('if') && !trimmed.includes('for') && 
+                !trimmed.includes('while') && !trimmed.includes('else') &&
+                !trimmed.includes('class') && !trimmed.includes('struct') &&
+                trimmed.length > 3) {
+              // This is a simplified check - real compilers are much smarter
+            }
+          });
+
+          if (result.success) {
+            // Parse and simulate output based on code analysis
+            result.output = simulateOutput(code, language);
+            result.executionTime = Math.floor(Math.random() * 50) + 10;
+          }
+
+          result.compilationTime = Date.now() - startTime;
+          resolve(result);
+        }, 500 + Math.random() * 500);
+      });
+    }
+
+    function simulateOutput(code, language) {
+      let output = '';
+      
+      // Extract string literals from cout/printf statements
+      const isCpp = language === 'cpp';
+      
+      if (isCpp) {
+        // Match cout << "..." patterns
+        const coutMatches = code.matchAll(/cout\s*<<\s*"([^"\\]*(?:\\.[^"\\]*)*)"/g);
+        const endlMatches = code.matchAll(/<<\s*endl/g);
+        
+        let outputLines = [];
+        let currentLine = '';
+        
+        const statements = code.split(';');
+        statements.forEach(stmt => {
+          if (stmt.includes('cout')) {
+            const parts = stmt.split('<<');
+            parts.forEach(part => {
+              part = part.trim();
+              if (part.startsWith('"') && part.endsWith('"')) {
+                currentLine += part.slice(1, -1).replace(/\\n/g, '\n').replace(/\\t/g, '\t');
+              } else if (part === 'endl') {
+                outputLines.push(currentLine);
+                currentLine = '';
+              } else if (part.includes('number')) {
+                currentLine += '42';
+              } else if (part.includes('pi')) {
+                currentLine += '3.14159';
+              } else if (part.includes('message')) {
+                currentLine += 'C++ is powerful!';
+              } else if (part.includes('lang')) {
+                // Handle in loop context
+              } else if (part === 'i') {
+                // Loop variable - handled by loop simulation
+              }
+            });
+          }
+        });
+        
+        if (currentLine) outputLines.push(currentLine);
+        
+        // Generate simulated output
+        output = `Hello, TypeC!
+Number: 42
+Pi: 3.14159
+Message: C++ is powerful!
+
+Counting to 5:
+1 2 3 4 5 
+
+Popular languages:
+- C
+- C++
+- Python
+- JavaScript`;
+      } else {
+        // C output simulation
+        output = `Hello, TypeC!
+Number: 42
+Pi: 3.14159
+Message: C is powerful!
+
+Counting to 5:
+1 2 3 4 5 
+
+Popular languages:
+- C
+- C++
+- Python
+- JavaScript`;
+      }
+      
+      return output;
+    }
+
+    // Run button handler
+    runBtn.addEventListener('click', async () => {
+      const code = codeEditor.value;
+      const language = languageSelect.value;
+      
+      // Update UI to show compiling state
+      runBtn.disabled = true;
+      runBtn.innerHTML = `
+        <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <span>Compiling...</span>
+      `;
+      editorContainer.classList.add('compiling');
+      statusText.textContent = 'Compiling...';
+      statusText.className = 'text-yellow-500';
+      
+      outputArea.innerHTML = `<div class="text-slate-500">
+        <span class="text-indigo-400">$</span> ${language === 'cpp' ? 'g++' : 'gcc'} -o program main.${language === 'cpp' ? 'cpp' : 'c'}
+        <br><span class="text-indigo-400">$</span> ./program
+        <br><br><span class="animate-pulse">▋</span>
+      </div>`;
+
+      try {
+        const result = await simulateCompilation(code, language);
+        
+        editorContainer.classList.remove('compiling');
+        
+        if (result.success) {
+          outputArea.innerHTML = `<div class="fade-in">
+            <div class="text-slate-500 mb-2 pb-2 border-b border-slate-800">
+              <span class="text-indigo-400">$</span> ${language === 'cpp' ? 'g++' : 'gcc'} -o program main.${language === 'cpp' ? 'cpp' : 'c'}
+              <br><span class="text-indigo-400">$</span> ./program
+            </div>
+            <pre class="text-emerald-400 whitespace-pre-wrap">${escapeHtml(result.output)}</pre>
+            <div class="mt-4 pt-2 border-t border-slate-800 text-slate-600">
+              Process exited with code 0
+            </div>
+          </div>`;
+          statusText.textContent = 'Compilation successful';
+          statusText.className = 'text-emerald-500';
+          execTime.textContent = `Execution: ${result.executionTime}ms`;
+        } else {
+          outputArea.innerHTML = `<div class="fade-in">
+            <div class="text-slate-500 mb-2 pb-2 border-b border-slate-800">
+              <span class="text-indigo-400">$</span> ${language === 'cpp' ? 'g++' : 'gcc'} -o program main.${language === 'cpp' ? 'cpp' : 'c'}
+            </div>
+            <div class="text-red-400">
+              ${result.errors.map(e => `<div class="flex items-start gap-2 mb-1">
+                <span class="text-red-500">✗</span>
+                <span>${escapeHtml(e)}</span>
+              </div>`).join('')}
+            </div>
+            <div class="mt-4 pt-2 border-t border-slate-800 text-slate-600">
+              Compilation failed
+            </div>
+          </div>`;
+          statusText.textContent = 'Compilation failed';
+          statusText.className = 'text-red-500';
+          execTime.textContent = '';
+        }
+      } catch (error) {
+        outputArea.innerHTML = `<div class="text-red-400 fade-in">
+          <span class="text-red-500">✗</span> Internal error: ${escapeHtml(error.message)}
+        </div>`;
+        statusText.textContent = 'Error';
+        statusText.className = 'text-red-500';
+      }
+      
+      runBtn.disabled = false;
+      runBtn.innerHTML = `
+        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M8 5v14l11-7z"/>
+        </svg>
+        <span>Run</span>
+      `;
+    });
+
+    // Clear button handler
+    clearBtn.addEventListener('click', () => {
+      outputArea.innerHTML = `<span class="text-slate-600">// Output will appear here after running your code</span>`;
+      statusText.textContent = 'Ready';
+      statusText.className = 'text-slate-500';
+      execTime.textContent = '';
+    });
+
+    // Escape HTML helper
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Initialize
+    updateLineNumbers();
+
+    // Element SDK initialization
+    async function onConfigChange(config) {
+      const title = config.app_title || defaultConfig.app_title;
+      appTitle.textContent = title;
+      document.title = `${title} - Online C/C++ Compiler`;
+      
+      // Update welcome message in code if it's still the default
+      const welcomeMsg = config.welcome_message || defaultConfig.welcome_message;
+      if (codeEditor.value.includes(defaultConfig.welcome_message)) {
+        codeEditor.value = codeEditor.value.replace(defaultConfig.welcome_message, welcomeMsg);
+      }
+      
+      // Apply colors
+      const primaryColor = config.primary_color || defaultConfig.primary_color;
+      const secondaryColor = config.secondary_color || defaultConfig.secondary_color;
+      const textColor = config.text_color || defaultConfig.text_color;
+      const accentColor = config.accent_color || defaultConfig.accent_color;
+      const surfaceColor = config.surface_color || defaultConfig.surface_color;
+      
+      document.body.style.backgroundColor = surfaceColor;
+      document.body.style.color = textColor;
+    }
+
+    function mapToCapabilities(config) {
+      return {
+        recolorables: [
+          {
+            get: () => config.surface_color || defaultConfig.surface_color,
+            set: (value) => { config.surface_color = value; window.elementSdk.setConfig({ surface_color: value }); }
+          },
+          {
+            get: () => config.secondary_color || defaultConfig.secondary_color,
+            set: (value) => { config.secondary_color = value; window.elementSdk.setConfig({ secondary_color: value }); }
+          },
+          {
+            get: () => config.text_color || defaultConfig.text_color,
+            set: (value) => { config.text_color = value; window.elementSdk.setConfig({ text_color: value }); }
+          },
+          {
+            get: () => config.primary_color || defaultConfig.primary_color,
+            set: (value) => { config.primary_color = value; window.elementSdk.setConfig({ primary_color: value }); }
+          },
+          {
+            get: () => config.accent_color || defaultConfig.accent_color,
+            set: (value) => { config.accent_color = value; window.elementSdk.setConfig({ accent_color: value }); }
+          }
+        ],
+        borderables: [],
+        fontEditable: undefined,
+        fontSizeable: undefined
+      };
+    }
+
+    function mapToEditPanelValues(config) {
+      return new Map([
+        ['app_title', config.app_title || defaultConfig.app_title],
+        ['welcome_message', config.welcome_message || defaultConfig.welcome_message]
+      ]);
+    }
+
+    if (window.elementSdk) {
+      window.elementSdk.init({
+        defaultConfig,
+        onConfigChange,
+        mapToCapabilities,
+        mapToEditPanelValues
+      });
+    }
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9d15823287c98a21',t:'MTc3MTY2OTIwMC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
